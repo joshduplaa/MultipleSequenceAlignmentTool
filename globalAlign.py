@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-Title : Joshua_Duplaa_R11583588_assignment2.py
+Title : globalAlign.py
 Description : This is an implementation of Needleman Wunch to do global pairwise alignment.
+This implementation has been modified to work with the flask backend of the Pairwise Alignment web app
 Author : Joshua Duplaa (R11583588)
 Date : 10/11/2024
 Version : 3.0
-Usage : python3 Joshua_Duplaa_R11583588_assignment2.py -i "in.fna" -o "out.fna" -s "BlOSUM50.mtx"
 Notes : this program has no requirements
 Python Version: 3.11.3
 =============================================================================
 """
-import argparse
-import sys
-import os
 
 def NeedlemanWunsch(sequencesToAlign, gapPenalty, score_matrix):
     #build alignMatrix
@@ -182,8 +179,10 @@ def Task2(sequenceList, gapPenalty, score_matrix):
 
     return alignedSequences, alignmentScore
 
-def main(sequenceList, gapPenalty, score_matrix):
+def main(sequenceList, score_matrix):
     #Execute task 2 - aligning the sequences
+    gapPenalty = int(score_matrix[3][len(score_matrix[3])-1])
+
     alignedSequences, alignmentScore = Task2(sequenceList, gapPenalty, score_matrix)
 
     return alignedSequences, alignmentScore
