@@ -8,6 +8,8 @@ export default function Home() {
   const [fastaFile, setFastaFile] = useState<File | null>(null);
   const [sequenceType, setSequenceType] = useState<string>('DNA') //Store a selected sequence type (DNA or Protein)
   const [response, setResponse] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   //event handler function for alignment type selection
   const handleSequenceType = (value: string) => {
@@ -24,24 +26,44 @@ export default function Home() {
   
   //Function to handle submit
   const handleSubmit = async () => {
+    // Reset previous messages
+    setResponse('');
+    setError('');
+    
     //Checks if the user has filled in the form correctly
     if (!sequenceType || !fastaFile) {
-      alert('Make sure all options are selected and a FASTA file is uploaded!');
+      setError('Make sure all options are selected and a FASTA file is uploaded!');
       return;
     }
 
-    // Create FormData to send file
-    const formData = new FormData();
-    formData.append('fastaFile', fastaFile);
-    formData.append('sequenceType', sequenceType);
+    setIsLoading(true);
 
-    //sends values to API, replace API route with secret when possible
-    const res = await fetch('http://localhost:5000/', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json();
-    setResponse(data.status);
+    try {
+      // Create FormData to send file
+      const formData = new FormData();
+      formData.append('fastaFile', fastaFile);
+      formData.append('sequenceType', sequenceType);
+
+      //sends values to API, replace API route with secret when possible
+      const res = await fetch('http://localhost:5000/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        // Handle HTTP errors (4xx, 5xx)
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error occurred' }));
+        throw new Error(errorData.error || `Server error: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      setResponse(data.status);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -89,12 +111,28 @@ export default function Home() {
             </div>
         </div>
       </div>
-      <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSubmit}>
-        Submit
+      <button 
+        className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed" 
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Processing...' : 'Submit'}
       </button>
 
+      {/**Error message */}
+      {error && (
+        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
       {/**Response from API */}
-      {response && <p className="mt-4">{response}</p>}
+      {response && (
+        <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <strong>Success:</strong>
+          <pre className="mt-2 whitespace-pre-wrap font-mono text-sm">{response}</pre>
+        </div>
+      )}
     </>
   );
 }

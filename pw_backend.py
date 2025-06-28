@@ -58,10 +58,15 @@ def receive_sequences():
         sequenceList, labelToSeq, seqToLabel, titleList = readSequenceFile.main(temp_file_path)
         alignedSequences, msaScore = msa.main(sequenceList, gapPenalty, score_matrix)
 
-        return jsonify({"status": f"sequences received and alignment started \n {alignedSequences}, alignment score {msaScore}"}), 200
+        # Format the aligned sequences for better display
+        formatted_sequences = "\n".join([f"Sequence {i+1}: {seq}" for i, seq in enumerate(alignedSequences)])
+        
+        return jsonify({
+            "status": f"Sequences received and alignment completed successfully!\n\nAligned Sequences:\n{formatted_sequences}\n\nAlignment Score: {msaScore}"
+        }), 200
     
     except Exception as e:
-        return jsonify({"error": f"Error processing file: {str(e)}"}), 500
+        return jsonify({"error": f"Error processing file, check sequence type"}), 500
     
     finally:
         # Clean up temporary file
