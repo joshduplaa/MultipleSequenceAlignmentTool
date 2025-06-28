@@ -12,8 +12,8 @@ Python Version: 3.11.3
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import globalAlign
-import localAlign
+import util.msa as msa
+import util.readSequenceFile as readSequenceFile
 
 app = Flask(__name__)
 CORS(app)
@@ -21,15 +21,8 @@ CORS(app)
 @app.route('/', methods=['POST'])
 def receive_sequences():
     data = request.get_json()
-    seq1 = data.get('seq1')
-    seq2 = data.get('seq2')
-    alignType = data.get('alignType', [])
+    inputFile = data.get('inputFile')
     sequenceType = data.get('sequenceType', [])
-
-    print(f"Sequence 1: {seq1}")
-    print(f"Sequence 2: {seq2}")
-    print('User selected:', alignType)
-    print('User selected:', sequenceType)
 
     if sequenceType == "DNA":
         with open("nucleotide.mtx", "r") as file:
@@ -45,14 +38,13 @@ def receive_sequences():
         scoreIndex += 1
     score_matrix[0] = "0" + score_matrix[0]
     score_matrix = [row.split() for row in score_matrix]
+    gapPenalty = int(score_matrix[3][len(score_matrix[3])-1])
 
-    if alignType == "Global":
-        alignedSequences, alignmentScore = globalAlign.main([seq1, seq2], score_matrix)
 
-    elif alignType == "Local":
-        alignedSequences, alignmentScore = localAlign.main([seq1, seq2], score_matrix)
+    sequenceList, labelToSeq, seqToLabel, titleList = readSequenceFile.main(inputFile)
+    alignedSequences, msaScore = msa.main(sequenceList, gapPenalty, score_matrix)
 
-    return jsonify({"status": f"sequences received and alignment started \n {alignedSequences}, alignment score {alignmentScore}"}), 200
+    return jsonify({"status": f"sequences received and alignment started \n {alignedSequences}, alignment score {msaScore}"}), 200
 
 
 if __name__ == '__main__':
