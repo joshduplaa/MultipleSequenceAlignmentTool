@@ -5,7 +5,7 @@ import * as React from 'react';
 
 export default function Home() {
   //defining object state (constructors) for backend
-  //const [fastaFile, setfastaFile] = useState(''); I don't think this linke is right
+  const [fastaFile, setFastaFile] = useState<File | null>(null);
   const [sequenceType, setSequenceType] = useState<string>('DNA') //Store a selected sequence type (DNA or Protein)
   const [response, setResponse] = useState('');
 
@@ -13,20 +13,32 @@ export default function Home() {
   const handleSequenceType = (value: string) => {
     setSequenceType(value)
   }
-  
 
+  //event handler function for file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setFastaFile(file);
+    }
+  }
+  
   //Function to handle submit
   const handleSubmit = async () => {
     //Checks if the user has filled in the form correctly
-    if ( !sequenceType || !fastaFile) {
-      alert('Make sure all options are selected and the text boxes are not empty!');
+    if (!sequenceType || !fastaFile) {
+      alert('Make sure all options are selected and a FASTA file is uploaded!');
       return;
     }
+
+    // Create FormData to send file
+    const formData = new FormData();
+    formData.append('fastaFile', fastaFile);
+    formData.append('sequenceType', sequenceType);
+
     //sends values to API, replace API route with secret when possible
     const res = await fetch('http://localhost:5000/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fastaFile, sequenceType}),
+      body: formData,
     });
     const data = await res.json();
     setResponse(data.status);
@@ -60,7 +72,21 @@ export default function Home() {
         </div>
         <div className='input'>
             {/**Button to upload FASTA File */}
-
+            <div className="file-upload">
+              <label htmlFor="fasta-file" className="file-label">
+                Choose FASTA File
+              </label>
+              <input
+                id="fasta-file"
+                type="file"
+                accept=".fasta,.fna"
+                onChange={handleFileUpload}
+                className="file-input"
+              />
+              {fastaFile && (
+                <p className="file-name">Selected file: {fastaFile.name}</p>
+              )}
+            </div>
         </div>
       </div>
       <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSubmit}>
